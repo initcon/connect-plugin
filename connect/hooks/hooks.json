@@ -1,0 +1,146 @@
+{
+  "description": "Connect: Neuigkeiten mit jeder Nachricht, Live-Anzeige der Assistenten, Regeln beim Start, Prüfung auf Fragen ohne #Nummer.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "neuigkeiten_holen",
+            "timeout": 5,
+            "input": {
+              "form": "hook",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/regeln/connect.md\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "clear|compact",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "neuigkeiten_holen",
+            "timeout": 5,
+            "input": {
+              "form": "hook",
+              "sitzung": "${session_id}",
+              "neu": "ja"
+            }
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "start",
+              "rolle": "${tool_input.subagent_type}",
+              "kurz": "${tool_input.description}",
+              "werkzeug_id": "${tool_use_id}",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "ende",
+              "werkzeug_id": "${tool_use_id}",
+              "agent_id": "${tool_response.agentId}",
+              "status": "${tool_response.status}",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "ende",
+              "werkzeug_id": "${tool_use_id}",
+              "status": "abgebrochen",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "ende",
+              "agent_id": "${agent_id}",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "manager_fertig",
+              "sitzung": "${session_id}"
+            }
+          },
+          {
+            "type": "prompt",
+            "timeout": 30,
+            "prompt": "Du prüfst die letzte Antwort des Managers an den Inhaber. Eingabe: $ARGUMENTS\nRegel 1: Ist stop_hook_active true, gib aus: {\"ok\": true}\nRegel 2: Lies last_assistant_message. Verlangt sie vom Inhaber eine Entscheidung oder Freigabe (Wahl zwischen Optionen, Ja oder Nein zu einem Vorschlag, Freigabe von Geld, Versand, Veröffentlichung, Löschen, Einstellungen) und steht im selben Absatz KEINE Nummer der Form #123? Dann gib aus: {\"ok\": false, \"reason\": \"Entscheidung vorgelegt ohne #Nummer. Erst in Connect mit frage_stellen oder freigabe_anfragen stellen, dann im Chat mit #Nummer darauf verweisen.\"}\nVerständnisfragen, Hintergrundfragen, rhetorische Fragen und Verweise auf vorhandene #Nummern verlangen keine Entscheidung.\nRegel 3: In allen anderen Fällen gib aus: {\"ok\": true}\nGib genau eines dieser beiden JSON-Objekte aus, wörtlich wie vorgegeben. Kein weiteres Feld, kein Komma am Ende, kein Text davor oder danach. Im Fall ok true gibt es kein Feld reason."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "connect",
+  "version": "0.1.0",
+  "description": "Verbindet Claude Code mit InitCon Connect: Aufgaben, Fragen und Freigaben laufen über Connect, die Antworten kommen mit jeder Nachricht.",
+  "author": {
+    "name": "InitCon",
+    "email": "connect@initcon.de"
+  },
+  "homepage": "https://app.initcon.ai",
+  "userConfig": {
+    "schluessel": {
+      "type": "string",
+      "title": "Schlüssel aus Connect",
+      "description": "In Connect unter Einstellungen, Karte „Verbundene Geräte“, „Schlüssel anlegen“. Beginnt mit kc1.",
+      "sensitive": true,
+      "required": true
+    },
+    "adresse": {
+      "type": "string",
+      "title": "Adresse von Connect",
+      "description": "Nur ändern, wenn InitCon es dir sagt.",
+      "default": "https://app.initcon.ai"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "initcon-connect": {
+      "type": "http",
+      "url": "${user_config.adresse}/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.schluessel}"
+      }
+    }
+  }
+}

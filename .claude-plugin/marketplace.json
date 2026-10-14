@@ -1,0 +1,15 @@
+{
+  "name": "initcon",
+  "description": "Plugins von InitCon für Claude Code.",
+  "owner": {
+    "name": "InitCon",
+    "email": "connect@initcon.de"
+  },
+  "plugins": [
+    {
+      "name": "connect",
+      "source": "./connect",
+      "description": "Verbindet Claude Code mit InitCon Connect."
+    }
+  ]
+}
