@@ -1,5 +1,5 @@
 {
-  "description": "Connect: Neuigkeiten mit jeder Nachricht, Live-Anzeige der Assistenten und (nur Claude Desktop) der Schrittliste des Managers, Regeln beim Start, Prüfung auf Fragen ohne #Nummer.",
+  "description": "Connect: Neuigkeiten mit jeder Nachricht, Live-Anzeige der Assistenten (auch fortgesetzt mit SendMessage) und (nur Claude Desktop) der Schrittliste des Managers, Regeln beim Start, Prüfung auf Fragen ohne #Nummer.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -98,6 +98,40 @@
               "weiter": "${tool_input.advance}",
               "erledigt": "${tool_input.done}",
               "beginnt": "${tool_input.start}",
+              "agent_id": "${agent_id}",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": "SendMessage",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "fortsetzung",
+              "werkzeug_id": "${tool_use_id}",
+              "agent_id": "${tool_input.to}",
+              "kurz": "${tool_input.summary}",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": "SubagentHandback",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "ende",
               "agent_id": "${agent_id}",
               "sitzung": "${session_id}"
             }
