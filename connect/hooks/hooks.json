@@ -141,6 +141,22 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "sitzung_ende",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      }
     ]
   }
 }
