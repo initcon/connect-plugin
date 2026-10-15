@@ -1,5 +1,5 @@
 {
-  "description": "Connect: Neuigkeiten mit jeder Nachricht, Live-Anzeige der Assistenten, Regeln beim Start, Prüfung auf Fragen ohne #Nummer.",
+  "description": "Connect: Neuigkeiten mit jeder Nachricht, Live-Anzeige der Assistenten und (nur Claude Desktop) der Schrittliste des Managers, Regeln beim Start, Prüfung auf Fragen ohne #Nummer.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -79,6 +79,26 @@
               "werkzeug_id": "${tool_use_id}",
               "agent_id": "${tool_response.agentId}",
               "status": "${tool_response.status}",
+              "sitzung": "${session_id}"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__ccd_turn__update_plan",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:connect:initcon-connect",
+            "tool": "aktivitaet_melden",
+            "timeout": 5,
+            "input": {
+              "was": "plan",
+              "schritte": "${tool_input.items}",
+              "weiter": "${tool_input.advance}",
+              "erledigt": "${tool_input.done}",
+              "beginnt": "${tool_input.start}",
+              "agent_id": "${agent_id}",
               "sitzung": "${session_id}"
             }
           }

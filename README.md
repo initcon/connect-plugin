@@ -30,7 +30,8 @@ Den Schlüssel speichert Claude Code im Schlüsselbund deines Rechners, nicht in
 
 - Die Verbindung zu Connect.
 - Hooks: Bei jeder Nachricht kommen neue Antworten aus Connect mit. In Connect siehst du live, welcher KI-Assistent
-  gerade arbeitet. Will Claude eine Entscheidung von dir, stellt es sie in Connect statt nur im Chat.
+  gerade arbeitet. In Claude Desktop siehst du dort auch die Schrittliste des Managers (braucht Connect 0.17.17).
+  Will Claude eine Entscheidung von dir, stellt es sie in Connect statt nur im Chat.
 - Regeln, die bei jedem Start geladen werden. Die wichtigste: Entscheiden, freigeben, löschen und versenden tust nur du.
   Claude kauft nie etwas.
 - Den Befehl `/connect:weiter`. Er holt alles Offene aus Connect und arbeitet deine Antworten ab.
