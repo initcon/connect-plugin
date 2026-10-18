@@ -34,10 +34,9 @@ Den Schlüssel speichert Claude Code im Schlüsselbund deines Rechners, nicht in
   In Claude Desktop siehst du dort auch die Schrittliste des Managers (braucht Connect 0.17.17).
   Will Claude eine Entscheidung von dir, stellt es sie in Connect statt nur im Chat.
 - Beim Start schickt das Plugin den Stand der Regeln an Connect (seit 0.1.4, braucht Connect 0.18.15). Du siehst sie unter
-  Team, Reiter „Regeln“. Mit geht nur: die Steckbriefe aus `.claude/agents/` (Kopfzeilen name, description, model, tools und
-  die Zeilen unter „Steckbrief“), aus der `CLAUDE.md` der Steckbrief und die Abschnitte Arbeitsweise, Leitbild, Freigaben,
-  Sprache, Regeln, Grenzen und Datenschutz, je Hook Ereignis, Matcher und eine Kurzbeschreibung, je Plugin Name, Version und
-  seine Regeldatei. Keine Erinnerungen, keine anderen Dateien. Dafür braucht der Rechner Node.js; ohne Node bleibt die Seite leer,
+  Team, Ansicht „Regeln“. Mit geht nur: die `CLAUDE.md` des Ordners und die Dateien in `.claude/agents/`, je ganz (bis
+  200 000 Zeichen, sonst gekürzt), je Hook Ereignis, Matcher und eine Kurzbeschreibung, je Plugin Name, Version und seine
+  Regeldatei. Keine Erinnerungen, keine anderen Dateien. Dafür braucht der Rechner Node.js; ohne Node bleibt die Seite leer,
   sonst ändert sich nichts. Klappt die Übertragung nicht, startet die Sitzung trotzdem normal.
 - Regeln, die bei jedem Start geladen werden. Die wichtigste: Entscheiden, freigeben, löschen und versenden tust nur du.
   Claude kauft nie etwas.

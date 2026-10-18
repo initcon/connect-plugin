@@ -1,4 +1,4 @@
-// T1098 (Plugin 0.1.4): scripts/regeln-senden.mjs. Aufruf: node --test test/. Alle Daten erfunden (Malerbetrieb Brandt).
+// T1098 (Plugin 0.1.4): scripts/regeln-senden.mjs. Aufruf: node --test test/regeln-senden.test.mjs. Alle Daten erfunden (Malerbetrieb Brandt).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
@@ -7,7 +7,7 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { abschnitte, hookKurz, kopfzeilen, kuerzen, METHODE, sammeln, senden, steckbrief } from "../connect/scripts/regeln-senden.mjs";
+import { DATEI_MAX, ganz, hookKurz, kopfzeilen, kuerzen, METHODE, ohneKopf, sammeln, senden } from "../connect/scripts/regeln-senden.mjs";
 
 const HIER = path.dirname(fileURLToPath(import.meta.url));
 const SKRIPT = path.join(HIER, "..", "connect", "scripts", "regeln-senden.mjs");
@@ -26,11 +26,11 @@ function ordnerAnlegen() {
 - Darf: Dateien im Ordner Brandt lesen und ändern.
 
 ## Ablage
-- GEHEIM-ABLAGE steht nicht in der Meldung.
+- INHALT-ABLAGE geht seit dem Nachtrag mit.
 
 ## Freigaben – immer erst fragen
 - Mails **versenden** tut Frau Brandt selbst.
-<!-- interne Notiz GEHEIM-KOMMENTAR -->
+<!-- interne Notiz INHALT-KOMMENTAR -->
 
 ## Arbeitsweise
 1. Auftrag verstehen.
@@ -51,7 +51,7 @@ tools:
   - mcp__gmail__create_draft
 ---
 
-Du bist der Postfach-Assistent. GEHEIM-AUFTRAGSTEXT steht nicht in der Meldung.
+Du bist der Postfach-Assistent. INHALT-AUFTRAGSTEXT geht mit.
 
 ## Steckbrief
 - Rolle: Postfach-Assistent
@@ -59,10 +59,12 @@ Du bist der Postfach-Assistent. GEHEIM-AUFTRAGSTEXT steht nicht in der Meldung.
 - Darf: Mails lesen, Entwürfe schreiben. Nichts abschicken.
 
 ## Arbeitsweise des Assistenten
-- GEHEIM-ARBEITSWEISE
+- INHALT-ARBEITSWEISE
 `);
   writeFileSync(path.join(projekt, ".claude", "agents", "buero.md"), "---\nname: buero\ndescription: Büro\ntools: Read, Write\n---\nOhne Steckbrief.\n");
   writeFileSync(path.join(projekt, ".claude", "memory", "MEMORY.md"), "GEHEIM-ERINNERUNG\n");
+  writeFileSync(path.join(projekt, ".claude", "agents", "notiz.txt"), "GEHEIM-ANDERE\n");
+  writeFileSync(path.join(projekt, "ANDERE.md"), "GEHEIM-ANDERE\n");
   writeFileSync(path.join(projekt, ".claude", "settings.json"), JSON.stringify({
     hooks: { PreToolUse: [{ matcher: "mcp__gmail__send_message", hooks: [{ type: "command", command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block-send.sh --token GEHEIM-TOKEN" }] }] },
     enabledPlugins: { "connect@initcon": true, "aus@irgendwo": false },
@@ -79,20 +81,12 @@ test("Kopfzeilen: Werte und Listen", () => {
   assert.deepEqual(kopfzeilen("kein Kopf"), {});
 });
 
-test("Steckbrief: nur die Zeilen darunter, bis zur nächsten Überschrift", () => {
-  assert.deepEqual(steckbrief("## Steckbrief\n- Rolle: A\n- **Darf:** B, C\nfreier Text\n## Weiter\n- Rolle: X"), [{ feld: "Rolle", wert: "A" }, { feld: "Darf", wert: "B, C" }]);
-  assert.deepEqual(steckbrief("## Anderes\n- Rolle: A"), []);
-});
-
-test("Abschnitte: nur die regelnden Überschriften der Ebene 2, Codeblöcke und Kommentare zählen nicht", () => {
-  const { projekt, wurzel } = ordnerAnlegen();
-  try {
-    const a = abschnitte(readFileSync(path.join(projekt, "CLAUDE.md"), "utf8"));
-    assert.deepEqual(a.map((x) => x.titel), ["Freigaben – immer erst fragen", "Arbeitsweise", "Sprache"]);
-    assert.match(a[1].text, /Sprache im Codeblock ist keine Überschrift/);
-    assert.equal(a[2].text, "Deutsch, Du-Form.");
-    assert.doesNotMatch(JSON.stringify(a), /GEHEIM/);
-  } finally { rmSync(wurzel, { recursive: true, force: true }); }
+test("Ganze Datei: Text ohne Kopfzeilen, höchstens DATEI_MAX Zeichen, sonst gekürzt", () => {
+  assert.equal(ohneKopf("---\nname: a\n---\n## Steckbrief\n- Rolle: A\n"), "## Steckbrief\n- Rolle: A\n");
+  assert.equal(ohneKopf("ohne Kopf"), "ohne Kopf");
+  assert.deepEqual(ganz("kurz", "a.md"), { datei: "a.md", text: "kurz", gekuerzt: false });
+  const g = ganz("x".repeat(DATEI_MAX + 10), "a.md");
+  assert.equal(g.text.length, DATEI_MAX); assert.equal(g.gekuerzt, true);
 });
 
 test("Kurzbeschreibung eines Hooks: kein Befehl im Wortlaut, keine Argumente", () => {
@@ -103,33 +97,39 @@ test("Kurzbeschreibung eines Hooks: kein Befehl im Wortlaut, keine Argumente", (
   assert.equal(hookKurz({ type: "http", url: "https://hooks.example.test/x?key=1" }), "hooks.example.test");
 });
 
-test("sammeln: Steckbriefe, Abschnitte, Hooks, Plugins; keine Erinnerungen, kein übriger Inhalt", () => {
+test("sammeln: nur CLAUDE.md und agents (je ganz), Hooks, Plugins; keine memory-Dateien, keine Befehle im Wortlaut", () => {
   const { projekt, home, wurzel } = ordnerAnlegen();
   try {
     const m = sammeln({ projekt, home, pluginRoot: PLUGIN });
     const roh = JSON.stringify(m);
-    assert.doesNotMatch(roh, /GEHEIM/, "nichts aus dem übrigen Inhalt, keine Erinnerungen, keine Token aus Befehlen");
-    assert.deepEqual(m.manager.steckbrief.map((z) => z.feld), ["Rolle", "Darf"]);
+    assert.doesNotMatch(roh, /GEHEIM-ERINNERUNG/, "keine Erinnerungen");
+    assert.doesNotMatch(roh, /GEHEIM-TOKEN/, "keine Argumente aus Befehlen");
+    assert.doesNotMatch(roh, /GEHEIM-ANDERE/, "keine anderen Dateien");
+    assert.deepEqual(m.claude_md, { datei: "CLAUDE.md", text: readFileSync(path.join(projekt, "CLAUDE.md"), "utf8"), gekuerzt: false }, "CLAUDE.md 1:1");
     const p = m.assistenten.find((a) => a.datei === "postfach");
-    assert.deepEqual(p, { datei: "postfach", name: "postfach", beschreibung: "Liest das Postfach und schreibt Antworten vor.", modell: "sonnet",
-      werkzeuge: "Read, mcp__gmail__create_draft", steckbrief: [{ feld: "Rolle", wert: "Postfach-Assistent" }, { feld: "Freigabe", wert: "Löschen" }, { feld: "Darf", wert: "Mails lesen, Entwürfe schreiben. Nichts abschicken." }] });
-    assert.deepEqual(m.assistenten.find((a) => a.datei === "buero").steckbrief, []);
+    assert.equal(p.name, "postfach"); assert.equal(p.modell, "sonnet"); assert.equal(p.werkzeuge, "Read, mcp__gmail__create_draft");
+    assert.equal(p.beschreibung, "Liest das Postfach und schreibt Antworten vor.");
+    assert.equal(p.text, ohneKopf(readFileSync(path.join(projekt, ".claude", "agents", "postfach.md"), "utf8")).replace(/^\n+/, ""), "Text unter den Kopfzeilen 1:1");
+    assert.match(p.text, /INHALT-AUFTRAGSTEXT/); assert.match(p.text, /INHALT-ARBEITSWEISE/);
+    assert.equal(p.gekuerzt, false);
+    assert.deepEqual(Object.keys(m).sort(), ["assistenten", "claude_md", "hooks", "plugin_version", "plugins"]);
     const sperre = m.hooks.find((h) => h.herkunft === "Projekt");
     assert.deepEqual(sperre, { ereignis: "PreToolUse", matcher: "mcp__gmail__send_message", art: "command", kurz: "block-send.sh", herkunft: "Projekt" });
     assert.equal(m.plugins.length, 1, "nur eingeschaltete Plugins, das eigene nicht doppelt");
     assert.equal(m.plugins[0].name, "connect@initcon");
     assert.equal(m.plugins[0].version, "0.1.4");
     assert.deepEqual(m.plugins[0].regeln.map((d) => d.datei), ["regeln/connect.md"]);
-    assert.doesNotMatch(m.plugins[0].regeln[0].text, /<!--/);
     assert.ok(m.hooks.some((h) => h.herkunft === "Plugin connect@initcon" && h.ereignis === "SessionStart" && h.kurz === "node regeln-senden.mjs"));
   } finally { rmSync(wurzel, { recursive: true, force: true }); }
 });
 
-test("kuerzen: unter 60 000 Bytes, zuerst ohne Regeldateien", () => {
-  const m = { allgemein: [{ titel: "A", text: "x".repeat(30_000) }, { titel: "B", text: "y".repeat(30_000) }], plugins: [{ name: "p", regeln: [{ datei: "r.md", text: "z".repeat(10_000) }] }], hooks: [], assistenten: [] };
+test("kuerzen: unter 900 000 Bytes, zuerst ohne Regeldateien, dann die längste Datei gekürzt", () => {
+  const m = { claude_md: { datei: "CLAUDE.md", text: "x".repeat(200_000), gekuerzt: false }, plugins: [{ name: "p", regeln: [{ datei: "r.md", text: "z".repeat(10_000) }] }], hooks: [],
+    assistenten: Array.from({ length: 5 }, (_, i) => ({ datei: "a" + i, text: "y".repeat(190_000), gekuerzt: false })) };
   kuerzen(m);
   assert.deepEqual(m.plugins[0].regeln, []);
-  assert.deepEqual(m.allgemein.map((a) => a.titel), ["A"]);
+  assert.ok(Buffer.byteLength(JSON.stringify(m)) <= 900_000);
+  assert.ok([m.claude_md, ...m.assistenten].some((d) => d.gekuerzt));
 });
 
 test("senden: JSON-RPC an /mcp mit Schlüssel im Kopf", async () => {

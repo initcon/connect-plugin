@@ -1,11 +1,12 @@
 // Connect 0.1.4 (T1098): Schickt beim Sitzungsstart den Stand der Regeln an Connect (Seite „Regeln“ unter Team, ab Connect 0.18.15).
 //
-// Was mitgeht, und nur das:
-//  - aus jeder Datei in .claude/agents/: die Kopfzeilen name, description, model, tools und die Zeilen unter „## Steckbrief“,
-//  - aus der CLAUDE.md: die Zeilen unter „## Steckbrief“ (Manager) und die Abschnitte mit den Überschriften aus ABSCHNITTE,
+// Was mitgeht, und nur das (Nachtrag Christof 18.10.: Inhalte 1:1):
+//  - die ganze CLAUDE.md des Projektordners,
+//  - aus jeder Datei in .claude/agents/: die Kopfzeilen name, description, model, tools und der ganze Text darunter,
 //  - je Hook (Projekt und eingeschaltete Plugins): Ereignis, Matcher, Art, eine Kurzbeschreibung und die Herkunft,
 //  - je eingeschaltetes Plugin: Name, Version, Beschreibung und die Regeldateien, die es beim Start lädt.
-// Keine ganzen Dateien, keine Erinnerungen (memory), nichts aus dem übrigen Inhalt, keine Befehle im Wortlaut.
+// Jede Datei höchstens DATEI_MAX Zeichen, sonst gekürzt (gekuerzt: true). Keine Erinnerungen (memory), keine anderen Dateien,
+// keine Befehle im Wortlaut. Verweise in der CLAUDE.md (@datei) werden nicht nachgeladen.
 //
 // Ein Fehler hält den Start nie auf: alles in try/catch, Ausgabe nur ins Leere, Exit-Code immer 0, Zeitlimit für die Anfrage.
 // Schlüssel und Adresse kommen aus der Umgebung (Claude Code setzt CLAUDE_PLUGIN_OPTION_<KEY> für Hooks), nie aus der Befehlszeile.
@@ -17,14 +18,13 @@ import { fileURLToPath } from "node:url";
 
 export const PLUGIN_VERSION = "0.1.4";
 export const METHODE = "initcon/regeln_melden";
-/** Überschriften (Ebene 2) der CLAUDE.md, die als Regeln gelten: Anfang der Überschrift, ohne Groß- und Kleinschreibung */
-export const ABSCHNITTE = ["Arbeitsweise", "Leitbild", "Freigabe", "Sprache", "Regeln", "Grenzen", "Datenschutz"];
-const MAX_BYTES = 60_000;
+/** Größte Datei in Zeichen; Connect nimmt bis 1 MB je Meldung an */
+export const DATEI_MAX = 200_000;
+const MAX_BYTES = 900_000;
 const ZEITLIMIT_MS = 4000;
 
 const lesen = (p) => { try { return readFileSync(p, "utf8").replace(/\r\n?/g, "\n"); } catch { return null; } };
 const json = (p) => { const t = lesen(p); if (t === null) return null; try { return JSON.parse(t); } catch { return null; } };
-const ohneKommentare = (t) => t.replace(/<!--[\s\S]*?-->/g, "");
 
 /** Kopfzeilen zwischen den ersten beiden „---“; Listen (- x) werden mit Komma verbunden */
 export function kopfzeilen(text) {
@@ -41,38 +41,12 @@ export function kopfzeilen(text) {
   return aus;
 }
 
-/** Zeilen „- Feld: Wert“ unter einer Überschrift „## Steckbrief“ (oder ###), bis zur nächsten Überschrift */
-export function steckbrief(text) {
-  const zeilen = ohneKommentare(text).split("\n");
-  const start = zeilen.findIndex((z) => /^#{2,3}\s+Steckbrief\s*$/i.test(z));
-  if (start < 0) return [];
-  const aus = [];
-  for (const z of zeilen.slice(start + 1)) {
-    if (/^#{1,3}\s/.test(z)) break;
-    const m = /^\s*[-*]\s+\**([A-ZÄÖÜ][\wäöüßÄÖÜ -]{0,30}?)\**:\**\s+(.+)$/.exec(z);
-    if (m) aus.push({ feld: m[1].trim(), wert: m[2].trim() });
-  }
-  return aus;
-}
+/** Text ohne die Kopfzeilen */
+export function ohneKopf(text) { return text.replace(/^---\n[\s\S]*?\n---(?:\n|$)/, ""); }
 
-/** Abschnitte der Ebene 2, deren Überschrift mit einem Wort aus ABSCHNITTE beginnt; Text bis zur nächsten Überschrift Ebene 1–2 */
-export function abschnitte(text, woerter = ABSCHNITTE) {
-  const zeilen = ohneKommentare(text).split("\n");
-  const aus = [];
-  let akt = null, imCode = false;
-  for (const z of zeilen) {
-    if (/^\s*(```|~~~)/.test(z)) imCode = !imCode;
-    const kopf = !imCode && /^(#{1,2})\s+(.+?)\s*#*\s*$/.exec(z);
-    if (kopf) {
-      if (akt) aus.push(akt);
-      const titel = kopf[2].trim();
-      akt = kopf[1].length === 2 && woerter.some((w) => titel.toLowerCase().startsWith(w.toLowerCase())) ? { titel, text: "" } : null;
-      continue;
-    }
-    if (akt) akt.text += z + "\n";
-  }
-  if (akt) aus.push(akt);
-  return aus.map((a) => ({ titel: a.titel, text: a.text.trim() })).filter((a) => a.text);
+/** Dateiinhalt 1:1, höchstens DATEI_MAX Zeichen */
+export function ganz(text, datei) {
+  return text.length > DATEI_MAX ? { datei, text: text.slice(0, DATEI_MAX), gekuerzt: true } : { datei, text, gekuerzt: false };
 }
 
 /** Kurzbeschreibung eines Hooks ohne den Befehl im Wortlaut */
@@ -133,7 +107,7 @@ function regeldateien(ordner, hooks) {
     const m = h.type === "command" && /^cat\s+"?\$\{CLAUDE_PLUGIN_ROOT\}\/([\w./-]+\.md)"?\s*$/.exec(String(h.command || ""));
     if (!m || m[1].includes("..")) continue;
     const t = lesen(path.join(ordner, m[1]));
-    if (t && !aus.some((d) => d.datei === m[1])) aus.push({ datei: m[1], text: ohneKommentare(t).trim() });
+    if (t && !aus.some((d) => d.datei === m[1])) aus.push(ganz(t, m[1]));
   }
   return aus;
 }
@@ -151,21 +125,18 @@ function pluginLesen(name, ordner, version) {
 
 /** Alles einsammeln, was mitgeht */
 export function sammeln({ projekt, home = os.homedir(), pluginRoot = null } = {}) {
-  const meldung = { plugin_version: PLUGIN_VERSION, allgemein: [], hooks: [], plugins: [], assistenten: [], manager: null };
+  const meldung = { plugin_version: PLUGIN_VERSION, claude_md: null, hooks: [], plugins: [], assistenten: [] };
   const claude = lesen(path.join(projekt, "CLAUDE.md"));
-  if (claude) {
-    meldung.allgemein = abschnitte(claude);
-    const s = steckbrief(claude);
-    if (s.length) meldung.manager = { steckbrief: s };
-  }
+  if (claude !== null && claude.trim()) meldung.claude_md = ganz(claude, "CLAUDE.md");
   const agenten = path.join(projekt, ".claude", "agents");
   if (existsSync(agenten)) {
     for (const datei of readdirSync(agenten).filter((d) => d.endsWith(".md")).sort()) {
       const t = lesen(path.join(agenten, datei));
       if (t === null) continue;
       const k = kopfzeilen(t);
+      const g = ganz(ohneKopf(t).replace(/^\n+/, ""), datei);
       meldung.assistenten.push({ datei: datei.replace(/\.md$/, ""), name: k.name || datei.replace(/\.md$/, ""), beschreibung: k.description || "",
-        modell: k.model || "", werkzeuge: k.tools || "", steckbrief: steckbrief(t) });
+        modell: k.model || "", werkzeuge: k.tools || "", text: g.text, gekuerzt: g.gekuerzt });
     }
   }
   for (const [p, wo] of [[path.join(projekt, ".claude", "settings.json"), "Projekt"], [path.join(projekt, ".claude", "settings.local.json"), "Projekt, nur dieser Rechner"]]) {
@@ -188,11 +159,16 @@ export function sammeln({ projekt, home = os.homedir(), pluginRoot = null } = {}
   return kuerzen(meldung);
 }
 
-/** Unter MAX_BYTES bleiben: zuerst die Regeldateien der Plugins weglassen, dann Abschnitte von hinten */
+/** Unter MAX_BYTES bleiben: zuerst die Regeldateien der Plugins weglassen, dann die längste Datei halbieren (gekürzt) */
 export function kuerzen(m) {
   const groesse = () => Buffer.byteLength(JSON.stringify(m));
   if (groesse() > MAX_BYTES) for (const p of m.plugins) p.regeln = [];
-  while (groesse() > MAX_BYTES && m.allgemein.length) m.allgemein.pop();
+  for (let i = 0; i < 40 && groesse() > MAX_BYTES; i++) {
+    const dateien = [m.claude_md, ...m.assistenten].filter((d) => d && d.text);
+    const d = dateien.sort((x, y) => y.text.length - x.text.length)[0];
+    if (!d) break;
+    d.text = d.text.slice(0, Math.floor(d.text.length / 2)); d.gekuerzt = true;
+  }
   return m;
 }
 
