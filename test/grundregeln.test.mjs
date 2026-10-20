@@ -17,6 +17,7 @@ test("grundregeln.json ist gültig und enthält genau den Text aus grundregeln.m
   assert.equal(j.hookSpecificOutput.hookEventName, "SubagentStart");
   assert.equal(j.hookSpecificOutput.additionalContext, md);
   assert.equal(roh, grundregelnJson(md), "grundregeln.json neu bauen: node scripts/grundregeln-json.mjs");
+  assert.ok(/^[\x00-\x7e]*$/.test(roh), "nur ASCII im JSON");
 });
 
 test("zehn Grundregeln, nichts aus einem bestimmten Betrieb", () => {

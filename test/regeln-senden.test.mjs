@@ -184,5 +184,5 @@ test("hooks.json: Hook beim Start, im Hintergrund, Fehler bleiben still", () => 
   assert.equal(e.async, true);
   assert.match(e.command, /exit 0$/);
   assert.doesNotMatch(e.command, /user_config/, "Schlüssel nie in der Befehlszeile");
-  assert.match(JSON.parse(readFileSync(path.join(PLUGIN, ".claude-plugin", "plugin.json"), "utf8")).version, /^0\.1\.([4-9]|\d\d+)$/, "Stand der Regeln gibt es seit 0.1.4");
+  assert.match(JSON.parse(readFileSync(path.join(PLUGIN, ".claude-plugin", "plugin.json"), "utf8")).version, /^(0\.1\.([4-9]|\d\d+)|0\.([2-9]|\d\d+)\.\d+|[1-9]\d*\.\d+\.\d+)$/, "Stand der Regeln gibt es seit 0.1.4");
 });

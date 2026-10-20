@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
 const REGELN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "connect", "regeln");
 
 export function grundregelnJson(text) {
-  return JSON.stringify({ hookSpecificOutput: { hookEventName: "SubagentStart", additionalContext: text } }) + "\n";
+  // Umlaute als \uXXXX, damit die Codepage unter Windows keine Rolle spielt
+  return JSON.stringify({ hookSpecificOutput: { hookEventName: "SubagentStart", additionalContext: text } }).replace(/[\u007f-\uffff]/g, (z) => "\\u" + z.charCodeAt(0).toString(16).padStart(4, "0")) + "\n";
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

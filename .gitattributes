@@ -1,0 +1,3 @@
+# Regeldateien und Hooks mit Unix-Zeilenenden, auch beim Auschecken unter Windows
+connect/regeln/* text eol=lf
+connect/hooks/*.json text eol=lf

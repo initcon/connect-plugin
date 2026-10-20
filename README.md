@@ -36,12 +36,12 @@ Den Schlüssel speichert Claude Code im Schlüsselbund deines Rechners, nicht in
 - Beim Start schickt das Plugin den Stand der Regeln an Connect (seit 0.1.4, braucht Connect 0.18.15). Du siehst sie unter
   Team, Ansicht „Regeln“. Mit geht nur: die `CLAUDE.md` des Ordners und die Dateien in `.claude/agents/`, je ganz (bis
   200 000 Zeichen, sonst gekürzt), je Hook Ereignis, Matcher und eine Kurzbeschreibung, je Plugin Name, Version und seine
-  Regeldatei. Keine Erinnerungen, keine anderen Dateien. Dafür braucht der Rechner Node.js; ohne Node bleibt die Seite leer,
+  Regeldateien. Keine Erinnerungen, keine anderen Dateien. Dafür braucht der Rechner Node.js; ohne Node bleibt die Seite leer,
   sonst ändert sich nichts. Klappt die Übertragung nicht, startet die Sitzung trotzdem normal.
 - Die Grundregeln von InitCon (seit 0.1.5): zehn Regeln, die in jedem Betrieb gelten, etwa „Senden tut nur ein Mensch“
   und „Kaufen ist eine Aufgabe“. Sie kommen beim Start zum Manager und beim Start jedes KI-Assistenten auch zu ihm. Die
-  `CLAUDE.md` des Betriebs und die Steckbriefe dürfen sie verschärfen, nie lockern. Nach einer Änderung an
-  `connect/regeln/grundregeln.md` baust du `grundregeln.json` neu: `node scripts/grundregeln-json.mjs`.
+  `CLAUDE.md` deines Betriebs und die Beschreibungen der einzelnen KI-Assistenten dürfen sie verschärfen, nie lockern.
+  Die Grundregeln ändert nur InitCon, mit einer neuen Version des Plugins.
 - Regeln für Connect, die bei jedem Start geladen werden. Die wichtigste: Entscheiden, freigeben, löschen und versenden
   tust nur du. Claude kauft nie etwas.
 - Den Befehl `/connect:weiter`. Er holt alles Offene aus Connect und arbeitet deine Antworten ab.
