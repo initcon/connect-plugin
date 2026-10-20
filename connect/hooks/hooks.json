@@ -1,5 +1,5 @@
 {
-  "description": "Connect: Stand der Regeln beim Start (Seite Regeln unter Team), Neuigkeiten mit jeder Nachricht, Live-Anzeige der Assistenten (auch fortgesetzt mit SendMessage) und (nur Claude Desktop) der Schrittliste des Managers, Regeln beim Start, Prüfung auf Fragen ohne #Nummer.",
+  "description": "Connect: Stand der Regeln beim Start (Seite Regeln unter Team), Neuigkeiten mit jeder Nachricht, Live-Anzeige der Assistenten (auch fortgesetzt mit SendMessage) und (nur Claude Desktop) der Schrittliste des Managers, Grundregeln von InitCon und Regeln beim Start (Grundregeln auch für jeden KI-Assistenten), Prüfung auf Fragen ohne #Nummer.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -34,6 +34,16 @@
         "hooks": [
           {
             "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/regeln/grundregeln.md\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
             "command": "cat \"${CLAUDE_PLUGIN_ROOT}/regeln/connect.md\"",
             "timeout": 5
           }
@@ -52,6 +62,17 @@
               "sitzung": "${session_id}",
               "neu": "ja"
             }
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/regeln/grundregeln.json\"",
+            "timeout": 5
           }
         ]
       }

@@ -117,8 +117,8 @@ test("sammeln: nur CLAUDE.md und agents (je ganz), Hooks, Plugins; keine memory-
     assert.deepEqual(sperre, { ereignis: "PreToolUse", matcher: "mcp__gmail__send_message", art: "command", kurz: "block-send.sh", herkunft: "Projekt" });
     assert.equal(m.plugins.length, 1, "nur eingeschaltete Plugins, das eigene nicht doppelt");
     assert.equal(m.plugins[0].name, "connect@initcon");
-    assert.equal(m.plugins[0].version, "0.1.4");
-    assert.deepEqual(m.plugins[0].regeln.map((d) => d.datei), ["regeln/connect.md"]);
+    assert.equal(m.plugins[0].version, JSON.parse(readFileSync(path.join(PLUGIN, ".claude-plugin", "plugin.json"), "utf8")).version, "Version aus plugin.json");
+    assert.deepEqual(m.plugins[0].regeln.map((d) => d.datei), ["regeln/grundregeln.md", "regeln/connect.md"]);
     assert.ok(m.hooks.some((h) => h.herkunft === "Plugin connect@initcon" && h.ereignis === "SessionStart" && h.kurz === "node regeln-senden.mjs"));
   } finally { rmSync(wurzel, { recursive: true, force: true }); }
 });
@@ -184,5 +184,5 @@ test("hooks.json: Hook beim Start, im Hintergrund, Fehler bleiben still", () => 
   assert.equal(e.async, true);
   assert.match(e.command, /exit 0$/);
   assert.doesNotMatch(e.command, /user_config/, "Schlüssel nie in der Befehlszeile");
-  assert.equal(JSON.parse(readFileSync(path.join(PLUGIN, ".claude-plugin", "plugin.json"), "utf8")).version, "0.1.4");
+  assert.match(JSON.parse(readFileSync(path.join(PLUGIN, ".claude-plugin", "plugin.json"), "utf8")).version, /^0\.1\.([4-9]|\d\d+)$/, "Stand der Regeln gibt es seit 0.1.4");
 });
