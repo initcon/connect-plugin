@@ -20,8 +20,8 @@ test("grundregeln.json ist gültig und enthält genau den Text aus grundregeln.m
   assert.ok(/^[\x00-\x7e]*$/.test(roh), "nur ASCII im JSON");
 });
 
-test("zehn Grundregeln, nichts aus einem bestimmten Betrieb", () => {
-  for (let i = 1; i <= 10; i++) assert.match(md, new RegExp(`^ ?${i}\\. \\*\\*`, "m"), `Regel ${i} fehlt`);
+test("acht Grundregeln, nichts aus einem bestimmten Betrieb", () => {
+  for (let i = 1; i <= 8; i++) assert.match(md, new RegExp(`^ ?${i}\\. \\*\\*`, "m"), `Regel ${i} fehlt`);
   for (const wort of ["Christof", "InitCon (Christof)", "SMS", "betrieb/"]) assert.ok(!md.includes(wort), `„${wort}“ gehört nicht in die Grundregeln`);
 });
 

@@ -38,7 +38,7 @@ Den Schlüssel speichert Claude Code im Schlüsselbund deines Rechners, nicht in
   200 000 Zeichen, sonst gekürzt), je Hook Ereignis, Matcher und eine Kurzbeschreibung, je Plugin Name, Version und seine
   Regeldateien. Keine Erinnerungen, keine anderen Dateien. Dafür braucht der Rechner Node.js; ohne Node bleibt die Seite leer,
   sonst ändert sich nichts. Klappt die Übertragung nicht, startet die Sitzung trotzdem normal.
-- Die Grundregeln von InitCon (seit 0.1.5): zehn Regeln, die in jedem Betrieb gelten, etwa „Senden tut nur ein Mensch“
+- Die Grundregeln von InitCon (seit 0.1.5): acht Regeln, die in jedem Betrieb gelten, etwa „Senden tut nur ein Mensch“
   und „Kaufen ist eine Aufgabe“. Sie kommen beim Start zum Manager und beim Start jedes KI-Assistenten auch zu ihm. Die
   `CLAUDE.md` deines Betriebs und die Beschreibungen der einzelnen KI-Assistenten dürfen sie verschärfen, nie lockern.
   Die Grundregeln ändert nur InitCon, mit einer neuen Version des Plugins.

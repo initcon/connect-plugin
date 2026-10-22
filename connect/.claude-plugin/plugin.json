@@ -1,6 +1,6 @@
 {
   "name": "connect",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Verbindet Claude Code mit InitCon Connect: Aufgaben, Fragen und Freigaben laufen über Connect, die Antworten kommen mit jeder Nachricht.",
   "author": {
     "name": "InitCon",
